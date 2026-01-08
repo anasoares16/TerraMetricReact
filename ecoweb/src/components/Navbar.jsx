@@ -27,11 +27,10 @@ export default function Navbar() {
           </li>
           <li>
             <a href="#" className="hover:text-green-400 transition">
-              Contact
+              Testimonials
             </a>
           </li>
-        </ul>
-
+          </ul>
       </div>
     </nav>
   )
