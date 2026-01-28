@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const perguntas = [
   { texto: "1. A empresa possui uma política ambiental formalizada?", opcoes: ["Não possui", "Está em planejamento", "Possui, mas não é aplicada regularmente", "Possui e é aplicada ativamente"] },
@@ -26,12 +25,9 @@ const perguntas = [
 
 export default function Questionario() {
   const [respostas, setRespostas] = useState(Array(perguntas.length).fill(null));
-  const [showGrafico, setShowGrafico] = useState(false);
-  const [dadosGrafico, setDadosGrafico] = useState([]);
+  const [resultado, setResultado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const MEDIA_BRASIL = 58;
 
   function responder(perguntaIndex, opcaoIndex) {
     const novasRespostas = [...respostas];
@@ -39,9 +35,9 @@ export default function Questionario() {
     setRespostas(novasRespostas);
   }
 
-  async function enviar() {
+  function enviar() {
     if (respostas.includes(null)) {
-      alert("Por favor, responda todas as 20 perguntas antes de gerar o gráfico!");
+      alert("Please answer all 20 questions before generating the result.");
       return;
     }
 
@@ -53,24 +49,33 @@ export default function Questionario() {
       const maxPontuacao = perguntas.length * 4;
       const pontuacaoFinal = Math.round((pontuacaoBruta / maxPontuacao) * 100);
 
-      setDadosGrafico([
-        { name: 'Sua Empresa', score: pontuacaoFinal, fill: '#22c55e' },
-        { name: 'Média Brasil', score: MEDIA_BRASIL, fill: '#475569' }
-      ]);
+      let classificacao = "";
 
-      setTimeout(() => {
-        setShowGrafico(true);
-        setLoading(false);
-      }, 500);
+      if (pontuacaoFinal >= 70) {
+        classificacao = "High Environmental Responsibility 🌱";
+      } else if (pontuacaoFinal >= 40) {
+        classificacao = "Medium Environmental Responsibility 🌍";
+      } else {
+        classificacao = "Low Environmental Responsibility ⚠️";
+      }
+
+      setResultado({
+        score: pontuacaoFinal,
+        label: classificacao,
+      });
+
+      setLoading(false);
     } catch (err) {
-      setError("Erro ao gerar o gráfico. Verifique o console.");
+      setError("Error generating environmental result.");
       setLoading(false);
     }
   }
 
   return (
     <section id="questionario" className="max-w-4xl mx-auto px-4 py-20 text-white scroll-mt-24">
-      <h1 className="text-3xl font-bold mb-8 text-green-400 text-center">Diagnóstico Ambiental TerraMetric</h1>
+      <h1 className="text-3xl font-bold mb-8 text-green-400 text-center">
+        Diagnóstico Ambiental TerraMetric
+      </h1>
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center mb-6">
@@ -78,14 +83,21 @@ export default function Questionario() {
         </div>
       )}
 
-      {!showGrafico ? (
+      {resultado === null ? (
         <div className="space-y-6">
           {perguntas.map((pergunta, i) => (
-            <div key={i} className="p-6 bg-slate-900/50 border border-white/10 rounded-xl hover:border-green-500/50 transition">
+            <div key={i} className="p-6 bg-slate-900/50 border border-white/10 rounded-xl">
               <p className="font-semibold mb-4 text-gray-200">{pergunta.texto}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {pergunta.opcoes.map((opcao, j) => (
-                  <label key={j} className={`flex items-center p-3 rounded-lg cursor-pointer border transition ${respostas[i] === j ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-white/5 border-transparent hover:bg-white/10'}`}>
+                  <label
+                    key={j}
+                    className={`flex items-center p-3 rounded-lg cursor-pointer border transition ${
+                      respostas[i] === j
+                        ? "bg-green-600/20 border-green-500 text-green-400"
+                        : "bg-white/5 border-transparent hover:bg-white/10"
+                    }`}
+                  >
                     <input
                       type="radio"
                       name={`pergunta-${i}`}
@@ -93,8 +105,14 @@ export default function Questionario() {
                       onChange={() => responder(i, j)}
                       className="hidden"
                     />
-                    <div className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${respostas[i] === j ? 'border-green-500' : 'border-gray-500'}`}>
-                      {respostas[i] === j && <div className="w-2 h-2 bg-green-500 rounded-full" />}
+                    <div
+                      className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${
+                        respostas[i] === j ? "border-green-500" : "border-gray-500"
+                      }`}
+                    >
+                      {respostas[i] === j && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      )}
                     </div>
                     <span className="text-sm">{opcao}</span>
                   </label>
@@ -102,61 +120,34 @@ export default function Questionario() {
               </div>
             </div>
           ))}
-          <button 
-            onClick={enviar} 
-            disabled={loading} 
-            className="w-full py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-xl font-bold text-lg transition-all shadow-xl shadow-green-900/20"
+
+          <button
+            onClick={enviar}
+            disabled={loading}
+            className="w-full py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-xl font-bold text-lg transition"
           >
-            {loading ? "Gerando..." : "Gerar Comparativo Ambiental"}
+            {loading ? "Generating..." : "Generate Result"}
           </button>
         </div>
       ) : (
-        <div className="bg-slate-900 p-8 rounded-2xl border border-white/10 animate-fade-in">
-          <h2 className="text-2xl font-bold mb-10 text-center">Performance Ambiental: Empresa vs Média Nacional</h2>
-          
-          {dadosGrafico.length > 0 ? (
-            <div className="h-80 w-full mb-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dadosGrafico}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
-                  <XAxis dataKey="name" stroke="#94a3b8" />
-                  <YAxis domain={[0, 100]} stroke="#94a3b8" />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                    contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
-                    formatter={(value) => [`${value}%`, 'Pontuação']}
-                  />
-                  <Bar dataKey="score" radius={[10, 10, 0, 0]} barSize={80}>
-                    {dadosGrafico.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-80 w-full mb-10 flex items-center justify-center">
-              <p className="text-gray-400">Erro ao carregar gráfico. Tente refazer o diagnóstico.</p>
-            </div>
-          )}
+        <div className="bg-slate-900 p-8 rounded-2xl border border-white/10 text-center animate-fade-in">
+          <h2 className="text-2xl font-bold mb-4 text-green-400">
+            Environmental Result
+          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-center">
-              <span className="text-gray-400 block text-sm uppercase tracking-wider">Sua Pontuação</span>
-              <span className="text-4xl font-black text-green-500">{dadosGrafico[0]?.score || 0}%</span>
-            </div>
-            <div className="p-4 bg-slate-800 border border-white/5 rounded-xl text-center">
-              <span className="text-gray-400 block text-sm uppercase tracking-wider">Média Brasil</span>
-              <span className="text-4xl font-black text-gray-400">{MEDIA_BRASIL}%</span>
-            </div>
-          </div>
+          <p className="text-5xl font-black mb-4">{resultado.score}%</p>
 
-          <p className="text-center text-gray-400 text-sm italic mb-8">
-            * Dados baseados no Índice de Sustentabilidade Empresarial (ISE) médio brasileiro de 2025.
-          </p>
+          <p className="text-lg text-gray-300 mb-8">{resultado.label}</p>
 
-          <button onClick={() => { setShowGrafico(false); setRespostas(Array(perguntas.length).fill(null)); setDadosGrafico([]); setError(null); }} className="block mx-auto text-green-500 hover:text-green-400 font-semibold underline">
-            Refazer Diagnóstico
+          <button
+            onClick={() => {
+              setResultado(null);
+              setRespostas(Array(perguntas.length).fill(null));
+              setError(null);
+            }}
+            className="text-green-500 hover:text-green-400 font-semibold underline"
+          >
+            Reiniciar diagnóstico
           </button>
         </div>
       )}
